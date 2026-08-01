@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root { --ink:#071019; --navy:#0a1722; --panel:#0d1d29; --cyan:#47e5da; --teal:#22bcb6; --purple:#bda7ff; --muted:#91a4b1; --line:rgba(142,181,195,.15); --font-geist:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --font-mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace; }
+:root { --ink:#081018; --navy:#0a1722; --panel:#0d1d29; --cyan:#45e3e8; --teal:#22bcb6; --purple:#a88cff; --white:#f5f7fa; --muted:#94a3b8; --line:rgba(148,163,184,.15); --font-geist:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --font-mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; scroll-padding-top:90px; }
 body { margin:0; background:var(--ink); color:#eef7f8; font-family:var(--font-geist),Arial,sans-serif; }
@@ -12,11 +12,9 @@ svg { width:1.1em; height:1.1em; flex:none; }
 .section-shell { width:min(1180px,calc(100% - 48px)); margin-inline:auto; }
 .site-header { position:sticky; top:0; z-index:50; border-bottom:1px solid rgba(130,181,193,.09); background:rgba(7,16,25,.76); -webkit-backdrop-filter:blur(18px) saturate(135%); backdrop-filter:blur(18px) saturate(135%); }
 .nav { width:min(1240px,calc(100% - 48px)); height:76px; margin:auto; display:flex; align-items:center; justify-content:space-between; position:relative; }
-.brand { display:flex; gap:11px; align-items:center; font-size:14px; font-weight:750; letter-spacing:.16em; white-space:nowrap; }
-.brand>span:last-child>span { color:var(--cyan); }
-.brand-mark { width:26px; height:26px; border:1px solid var(--cyan); border-radius:50%; display:grid; place-items:center; position:relative; box-shadow:0 0 20px rgba(71,229,218,.14); }
-.brand-mark:before,.brand-mark:after,.brand-mark span:before,.brand-mark span:after { content:""; position:absolute; width:4px; height:4px; border:1px solid var(--cyan); border-radius:50%; background:var(--ink); }
-.brand-mark:before { top:3px; left:10px }.brand-mark:after { bottom:3px; right:4px }.brand-mark span:before { top:8px; left:4px }.brand-mark span:after { top:8px; right:4px }
+.brand { display:flex; align-items:center; width:max-content; }
+.brand-logo { display:block; width:188px; height:36px; object-fit:contain; object-position:left center; }
+.footer-logo { width:204px; height:39px; }
 .nav-links { display:flex; align-items:center; gap:38px; color:#94a7b3; font-size:13px; }
 .nav-links a { transition:color .2s; position:relative; }.nav-links a:after { content:""; position:absolute; left:0; right:100%; bottom:-8px; height:1px; background:var(--cyan); transition:right .25s ease; }.nav-links a:hover { color:var(--cyan); }.nav-links a:hover:after,.nav-links a:focus-visible:after { right:0; }
 .nav-cta { min-height:40px; padding:0 18px; display:flex; gap:10px; align-items:center; border:1px solid rgba(71,229,218,.5); color:var(--cyan); font-size:12px; font-weight:650; }

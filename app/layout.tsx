@@ -14,13 +14,18 @@ export const metadata: Metadata = {
     siteName: "CyberCookie",
     locale: "en_US",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "CyberCookie — cybersecurity built for people who learn by doing" }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "CyberCookie | Practical Cybersecurity",
     description: "Practical education and defensive tools for people who learn by doing.",
+    images: ["/og-image.png"],
   },
-  icons: { icon: "/icon.svg" },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "64x64" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

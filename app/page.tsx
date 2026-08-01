@@ -1,3 +1,7 @@
+import Image from "next/image";
+
+const ACADEMY_URL = "https://aestrea-academy.cybercookie.org/academy";
+
 const Arrow = () => (
   <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
     <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -12,7 +16,7 @@ const Check = () => (
 
 const navItems = [
   ["Home", "#home"],
-  ["Academy", "#academy"],
+  ["Academy", ACADEMY_URL],
   ["Enterprise", "#enterprise"],
   ["About", "#about"],
   ["Contact", "#contact"],
@@ -43,8 +47,7 @@ export default function Home() {
       <header className="site-header">
       <nav className="nav" aria-label="Primary navigation">
         <a className="brand" href="#home" aria-label="CyberCookie home">
-          <span className="brand-mark" aria-hidden="true"><span /></span>
-          <span>CYBER<span>COOKIE</span></span>
+          <Image className="brand-logo" src="/logo-dark.svg" alt="CyberCookie" width={188} height={36} priority />
         </a>
         <div className="nav-links">
           {navItems.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
@@ -60,7 +63,7 @@ export default function Home() {
         <h1 id="hero-heading">Cybersecurity built for people who <em>learn by doing.</em></h1>
         <p className="hero-copy">Practical education and defensive tools designed to make security clearer, more useful, and open to everyone.</p>
         <div className="hero-actions">
-          <a className="button primary" href="https://cybercookie.org/academy">Explore the Academy <Arrow /></a>
+          <a className="button primary" href={ACADEMY_URL}>Explore the Academy <Arrow /></a>
           <a className="button secondary" href="#enterprise">Explore Astraea <Arrow /></a>
         </div>
         <div className="hero-proof">
@@ -118,7 +121,7 @@ export default function Home() {
               <div className={`card-icon icon-${index + 1}`} aria-hidden="true"><span>{index === 0 ? "⌁" : index === 1 ? ">_" : "✓"}</span></div>
               <span className="card-number">/{card.number}</span>
               <h3>{card.title}</h3><p>{card.copy}</p>
-              <a href="#contact">Start learning <Arrow /></a>
+              <a href={ACADEMY_URL}>Start learning <Arrow /></a>
             </article>
           ))}
         </div>
@@ -169,9 +172,9 @@ export default function Home() {
       </main>
       <footer className="section-shell" aria-label="Site footer">
         <div className="footer-main">
-          <div><a className="brand" href="#home" aria-label="CyberCookie home"><span className="brand-mark" aria-hidden="true"><span /></span><span>CYBER<span>COOKIE</span></span></a><p>Practical security for everyone<br />ready to learn.</p></div>
+          <div><a className="brand" href="#home" aria-label="CyberCookie home"><Image className="brand-logo footer-logo" src="/logo-dark.svg" alt="CyberCookie" width={188} height={36} /></a><p>Practical security for everyone<br />ready to learn.</p></div>
           <div className="footer-links">
-            <div><b>PRODUCTS</b><a href="https://cybercookie.org/academy">Academy</a><a href="#enterprise">Astraea</a><a href="#about">About</a><a href="mailto:hello@cybercookie.org">Contact</a></div>
+            <div><b>PRODUCTS</b><a href={ACADEMY_URL}>Academy</a><a href="#enterprise">Astraea</a><a href="#about">About</a><a href="mailto:hello@cybercookie.org">Contact</a></div>
             <div><b>LEGAL</b><a href="https://cybercookie.org/privacy">Privacy Policy</a><a href="https://cybercookie.org/terms">Terms of Service</a></div>
             <div><b>SOCIAL</b><a href="https://github.com/cybercookie" target="_blank" rel="noreferrer" aria-label="CyberCookie on GitHub (opens in a new tab)">GitHub</a><a href="https://www.linkedin.com/company/cybercookie" target="_blank" rel="noreferrer" aria-label="CyberCookie on LinkedIn (opens in a new tab)">LinkedIn</a></div>
           </div>

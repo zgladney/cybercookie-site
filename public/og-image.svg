@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs><radialGradient id="glow"><stop stop-color="#135B61" stop-opacity=".48"/><stop offset="1" stop-color="#081018" stop-opacity="0"/></radialGradient><mask id="cut"><rect width="240" height="240" fill="white"/><circle cx="184" cy="44" r="40" fill="black"/><circle cx="204" cy="100" r="37" fill="black"/></mask></defs>
+  <rect width="1200" height="630" fill="#081018"/><circle cx="940" cy="80" r="460" fill="url(#glow)"/><path d="M0 540 1200 290M0 420 1200 170" stroke="#45E3E8" stroke-opacity=".035"/>
+  <g transform="translate(88 84) scale(2.1)" mask="url(#cut)" fill="none" stroke="#45E3E8" stroke-linecap="round" stroke-linejoin="round"><circle cx="120" cy="120" r="88" stroke-width="10"/><path d="M64 106h38l22-22V44M60 143h44l23 23v32M116 121h48" stroke-width="8"/><g fill="#081018" stroke-width="8"><circle cx="124" cy="44" r="10"/><circle cx="60" cy="106" r="10"/><circle cx="60" cy="143" r="10"/><circle cx="127" cy="198" r="10"/><circle cx="164" cy="121" r="10"/></g></g>
+  <text x="545" y="270" fill="#F5F7FA" font-family="Arial,Helvetica,sans-serif" font-size="64" font-weight="700" letter-spacing="4">CYBER<tspan fill="#45E3E8">COOKIE</tspan></text>
+  <text x="548" y="333" fill="#94A3B8" font-family="Arial,Helvetica,sans-serif" font-size="25">Cybersecurity built for people</text><text x="548" y="370" fill="#94A3B8" font-family="Arial,Helvetica,sans-serif" font-size="25">who learn by doing.</text>
+</svg>
