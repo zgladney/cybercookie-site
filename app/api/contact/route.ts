@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
 
   try {
