@@ -103,22 +103,22 @@ export async function POST(request: NextRequest) {
     });
 
     if (insertRes.error) {
-      console.error("contact_submissions insert failed", {
-        message: insertRes.error.message,
-        code: insertRes.error.code,
-      });
-      return NextResponse.json(
-        { ok: false, error: "Unable to submit right now. Please email hello@cybercookie.org." },
-        { status: 500 },
-      );
+      throw insertRes.error;
     }
+  } catch (err) {
+    console.error("CONTACT ERROR");
+    console.error(err);
+    console.error(err instanceof Error ? err.stack : err);
 
-    return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (error) {
-    console.error("contact_submissions unexpected error", error);
     return NextResponse.json(
-      { ok: false, error: "Unable to submit right now. Please email hello@cybercookie.org." },
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : null,
+      },
       { status: 500 },
     );
   }
+
+  return NextResponse.json({ ok: true }, { status: 200 });
 }
