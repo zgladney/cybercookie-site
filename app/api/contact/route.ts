@@ -145,31 +145,27 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (err) {
-    console.error("CONTACT INSERT ERROR");
-    console.error(err);
-
-    if (err instanceof Error) {
-      console.error({
-        name: err.name,
-        message: err.message,
-        stack: err.stack,
-        cause: err.cause,
-      });
-
-      if (err.cause) {
-        console.dir(err.cause, { depth: null });
-      }
-    }
+    const diagnostic =
+      err && typeof err === "object"
+        ? {
+            ...(err as Record<string, unknown>),
+            code: (err as Record<string, unknown>).code ?? null,
+            message: (err as Record<string, unknown>).message ?? null,
+            details: (err as Record<string, unknown>).details ?? null,
+            hint: (err as Record<string, unknown>).hint ?? null,
+            status: (err as Record<string, unknown>).status ?? null,
+            statusText: (err as Record<string, unknown>).statusText ?? null,
+          }
+        : err;
+    console.error("CONTACT RAW ERROR:", err);
+    console.error("CONTACT RAW ERROR JSON:", JSON.stringify(diagnostic, null, 2));
 
     return NextResponse.json(
       {
         ok: false,
-        name: err instanceof Error ? err.name : null,
-        message: err instanceof Error ? err.message : String(err),
-        cause:
-          err instanceof Error && err.cause
-            ? JSON.stringify(err.cause, null, 2)
-            : null,
+        diagnostic,
+        diagnosticType: typeof err,
+        isErrorInstance: err instanceof Error,
       },
       { status: 500 },
     );
