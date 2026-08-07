@@ -1,6 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 
-const ACADEMY_URL = "https://aestrea-academy.cybercookie.org/academy";
+const ACADEMY_URL = "https://cybercookie.org/academy";
 
 const Arrow = () => (
   <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
@@ -19,7 +20,7 @@ const navItems = [
   ["Academy", ACADEMY_URL],
   ["Enterprise", "#enterprise"],
   ["About", "#about"],
-  ["Contact", "#contact"],
+  ["Contact", "/contact"],
 ];
 
 const academyCards = [
@@ -50,7 +51,11 @@ export default function Home() {
           <Image className="brand-logo" src="/logo-dark.svg" alt="CyberCookie" width={188} height={36} priority />
         </a>
         <div className="nav-links">
-          {navItems.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
+          {navItems.map(([label, href]) => (
+            href.startsWith("/")
+              ? <Link key={href} href={href}>{label}</Link>
+              : <a key={href} href={href}>{label}</a>
+          ))}
         </div>
         <a className="nav-cta" href="mailto:hello@cybercookie.org?subject=CyberCookie%20Beta">Join the beta <Arrow /></a>
       </nav>
@@ -139,7 +144,7 @@ export default function Home() {
               <li><Check /><span><b>Built for real teams</b> — fast to adopt, simple to operate.</span></li>
               <li><Check /><span><b>Defensive by design</b> — thoughtful tools, not security theater.</span></li>
             </ul>
-            <a className="button lavender" href="#contact">Discover Astraea <Arrow /></a>
+            <Link className="button lavender" href="/contact">Discover Astraea <Arrow /></Link>
           </div>
         </div>
       </section>
@@ -174,8 +179,8 @@ export default function Home() {
         <div className="footer-main">
           <div><a className="brand" href="#home" aria-label="CyberCookie home"><Image className="brand-logo footer-logo" src="/logo-dark.svg" alt="CyberCookie" width={188} height={36} /></a><p>Practical security for everyone<br />ready to learn.</p></div>
           <div className="footer-links">
-            <div><b>PRODUCTS</b><a href={ACADEMY_URL}>Academy</a><a href="#enterprise">Astraea</a><a href="#about">About</a><a href="mailto:hello@cybercookie.org">Contact</a></div>
-            <div><b>LEGAL</b><a href="https://cybercookie.org/privacy">Privacy Policy</a><a href="https://cybercookie.org/terms">Terms of Service</a></div>
+            <div><b>PRODUCTS</b><a href={ACADEMY_URL}>Academy</a><a href="#enterprise">Astraea</a><a href="#about">About</a><Link href="/contact">Contact</Link></div>
+            <div><b>LEGAL</b><Link href="/privacy">Privacy Policy</Link><Link href="/terms">Terms of Service</Link></div>
             <div><b>SOCIAL</b><a href="https://github.com/cybercookie" target="_blank" rel="noreferrer" aria-label="CyberCookie on GitHub (opens in a new tab)">GitHub</a><a href="https://www.linkedin.com/company/cybercookie" target="_blank" rel="noreferrer" aria-label="CyberCookie on LinkedIn (opens in a new tab)">LinkedIn</a></div>
           </div>
         </div>

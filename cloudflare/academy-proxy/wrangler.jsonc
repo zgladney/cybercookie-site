@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cybercookie-academy-proxy",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "cybercookie.org/academy*",
+      "zone_name": "cybercookie.org"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
