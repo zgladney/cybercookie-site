@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 export const runtime = "nodejs";
+
+// In-memory rate limiter: 5 submissions per IP per hour.
+// Resets on serverless cold-start; use an external store for stricter enforcement.
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
 
 const reasons = new Set([
   "General inquiry",
@@ -18,6 +37,7 @@ type ContactPayload = {
   reason?: unknown;
   message?: unknown;
   website?: unknown; // honeypot
+  turnstileToken?: unknown;
 };
 
 function cleanString(value: unknown): string {
@@ -36,10 +56,22 @@ const MAX_REASON_LENGTH = 64;
 const MAX_MESSAGE_LENGTH = 4000;
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
+  // Parse body
   let body: ContactPayload;
-  let rawBody = "";
   try {
-    rawBody = await request.text();
+    const rawBody = await request.text();
     if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
       return NextResponse.json({ ok: false, error: "Request payload is too large." }, { status: 413 });
     }
@@ -48,9 +80,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid request body." }, { status: 400 });
   }
 
-  const honeypot = cleanString(body.website);
-  if (honeypot) {
-    // Silently accept honeypot submissions.
+  // Honeypot
+  if (cleanString(body.website)) {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 
@@ -70,50 +101,41 @@ export async function POST(request: NextRequest) {
   if (message.length < 20) return NextResponse.json({ ok: false, error: "Message must be at least 20 characters." }, { status: 400 });
   if (message.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ ok: false, error: "Message is too long." }, { status: 400 });
 
+  // Cloudflare Turnstile verification (skipped if TURNSTILE_SECRET_KEY is not configured)
+  const turnstileSecretKey = process.env.TURNSTILE_SECRET_KEY;
+  if (turnstileSecretKey) {
+    const turnstileToken = cleanString(body.turnstileToken);
+    if (!turnstileToken) {
+      return NextResponse.json({ ok: false, error: "Verification required." }, { status: 400 });
+    }
+    try {
+      const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret: turnstileSecretKey, response: turnstileToken, remoteip: ip }),
+      });
+      const verifyData = (await verifyRes.json()) as { success: boolean };
+      if (!verifyData.success) {
+        return NextResponse.json(
+          { ok: false, error: "Verification failed. Please try again." },
+          { status: 400 },
+        );
+      }
+    } catch (err) {
+      console.error("turnstile verification error", err instanceof Error ? err.message : err);
+      return NextResponse.json(
+        { ok: false, error: "Unable to send your message right now." },
+        { status: 503 },
+      );
+    }
+  }
+
+  // Supabase insert
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  console.log({
-    hasSupabaseUrl: !!supabaseUrl,
-    hasServiceRoleKey: !!serviceRoleKey,
-  });
   if (!supabaseUrl || !serviceRoleKey) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: "Contact submission is not fully configured.",
-        debug: {
-          hasSupabaseUrl: !!supabaseUrl,
-          hasServiceRoleKey: !!serviceRoleKey,
-        },
-      },
-      { status: 503 },
-    );
-  }
-
-  let parsedSupabaseUrl: URL;
-  try {
-    parsedSupabaseUrl = new URL(supabaseUrl);
-  } catch (err) {
-    console.error("CONTACT CONFIG ERROR", {
-      name: err instanceof Error ? err.name : null,
-      message: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : null,
-      cause: err instanceof Error ? err.cause : null,
-    });
-    return NextResponse.json(
-      { ok: false, error: "NEXT_PUBLIC_SUPABASE_URL is invalid. Expected https://<project>.supabase.co" },
-      { status: 503 },
-    );
-  }
-
-  const normalizedPath = parsedSupabaseUrl.pathname.replace(/\/+$/, "");
-  if (normalizedPath === "/rest/v1") {
-    console.error("CONTACT CONFIG ERROR", {
-      error: "NEXT_PUBLIC_SUPABASE_URL must not include /rest/v1",
-      supabaseUrl,
-    });
-    return NextResponse.json(
-      { ok: false, error: "NEXT_PUBLIC_SUPABASE_URL must be https://<project>.supabase.co (no /rest/v1)." },
+      { ok: false, error: "Unable to send your message right now." },
       { status: 503 },
     );
   }
@@ -122,53 +144,58 @@ export async function POST(request: NextRequest) {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
 
-  try {
-    const { data, error } = await supabase.from("contact_submissions").insert({
-      name,
-      email,
-      organization: organization || null,
-      reason,
-      message,
-      status: "new",
+  const { error: insertError } = await supabase.from("contact_submissions").insert({
+    name,
+    email,
+    organization: organization || null,
+    reason,
+    message,
+    status: "new",
+  });
+
+  if (insertError) {
+    console.error("contact_submissions insert failed", {
+      message: insertError.message,
+      code: insertError.code,
     });
-
-    if (error) {
-      console.error("SUPABASE ERROR", error);
-      console.error("SUPABASE DATA", data);
-      return NextResponse.json(
-        {
-          ok: false,
-          supabaseError: error,
-          data,
-        },
-        { status: 500 },
-      );
-    }
-  } catch (err) {
-    const diagnostic =
-      err && typeof err === "object"
-        ? {
-            ...(err as Record<string, unknown>),
-            code: (err as Record<string, unknown>).code ?? null,
-            message: (err as Record<string, unknown>).message ?? null,
-            details: (err as Record<string, unknown>).details ?? null,
-            hint: (err as Record<string, unknown>).hint ?? null,
-            status: (err as Record<string, unknown>).status ?? null,
-            statusText: (err as Record<string, unknown>).statusText ?? null,
-          }
-        : err;
-    console.error("CONTACT RAW ERROR:", err);
-    console.error("CONTACT RAW ERROR JSON:", JSON.stringify(diagnostic, null, 2));
-
     return NextResponse.json(
-      {
-        ok: false,
-        diagnostic,
-        diagnosticType: typeof err,
-        isErrorInstance: err instanceof Error,
-      },
+      { ok: false, error: "Unable to send your message right now." },
       { status: 500 },
     );
+  }
+
+  // Email notifications via Resend — failure does not affect the success response
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (resendApiKey) {
+    try {
+      const resend = new Resend(resendApiKey);
+      await Promise.all([
+        resend.emails.send({
+          from: "CyberCookie Contact <hello@cybercookie.org>",
+          to: "hello@cybercookie.org",
+          subject: "New Contact Form Submission",
+          text: [
+            `Name:\n${name}`,
+            `Email:\n${email}`,
+            `Organization:\n${organization || "—"}`,
+            `Reason:\n${reason}`,
+            `Message:\n${message}`,
+          ].join("\n\n"),
+        }),
+        resend.emails.send({
+          from: "CyberCookie <hello@cybercookie.org>",
+          to: email,
+          subject: "We've received your message",
+          text: [
+            `Hi ${name},`,
+            `Thank you for contacting CyberCookie. We've received your message and will get back to you within 1–2 business days.`,
+            `Best regards,\nThe CyberCookie Team`,
+          ].join("\n\n"),
+        }),
+      ]);
+    } catch (emailErr) {
+      console.error("contact email send failed", emailErr instanceof Error ? emailErr.message : emailErr);
+    }
   }
 
   return NextResponse.json({ ok: true }, { status: 200 });
