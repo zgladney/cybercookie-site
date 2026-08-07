@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+
 const reasons = new Set([
   "General inquiry",
   "Aestrea Academy",
@@ -68,8 +70,8 @@ export async function POST(request: NextRequest) {
   if (message.length < 20) return NextResponse.json({ ok: false, error: "Message must be at least 20 characters." }, { status: 400 });
   if (message.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ ok: false, error: "Message is too long." }, { status: 400 });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   console.log({
     hasSupabaseUrl: !!supabaseUrl,
     hasServiceRoleKey: !!serviceRoleKey,
@@ -84,6 +86,34 @@ export async function POST(request: NextRequest) {
           hasServiceRoleKey: !!serviceRoleKey,
         },
       },
+      { status: 503 },
+    );
+  }
+
+  let parsedSupabaseUrl: URL;
+  try {
+    parsedSupabaseUrl = new URL(supabaseUrl);
+  } catch (err) {
+    console.error("CONTACT CONFIG ERROR", {
+      name: err instanceof Error ? err.name : null,
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : null,
+      cause: err instanceof Error ? err.cause : null,
+    });
+    return NextResponse.json(
+      { ok: false, error: "NEXT_PUBLIC_SUPABASE_URL is invalid. Expected https://<project>.supabase.co" },
+      { status: 503 },
+    );
+  }
+
+  const normalizedPath = parsedSupabaseUrl.pathname.replace(/\/+$/, "");
+  if (normalizedPath === "/rest/v1") {
+    console.error("CONTACT CONFIG ERROR", {
+      error: "NEXT_PUBLIC_SUPABASE_URL must not include /rest/v1",
+      supabaseUrl,
+    });
+    return NextResponse.json(
+      { ok: false, error: "NEXT_PUBLIC_SUPABASE_URL must be https://<project>.supabase.co (no /rest/v1)." },
       { status: 503 },
     );
   }
@@ -106,15 +136,19 @@ export async function POST(request: NextRequest) {
       throw insertRes.error;
     }
   } catch (err) {
-    console.error("CONTACT ERROR");
-    console.error(err);
-    console.error(err instanceof Error ? err.stack : err);
+    const errorLike = typeof err === "object" && err !== null ? (err as { name?: unknown; message?: unknown; stack?: unknown; cause?: unknown }) : null;
+    console.error("CONTACT ERROR", {
+      name: err instanceof Error ? err.name : typeof errorLike?.name === "string" ? errorLike.name : null,
+      message: err instanceof Error ? err.message : typeof errorLike?.message === "string" ? errorLike.message : String(err),
+      stack: err instanceof Error ? err.stack : typeof errorLike?.stack === "string" ? errorLike.stack : null,
+      cause: err instanceof Error ? err.cause : errorLike?.cause ?? null,
+    });
 
     return NextResponse.json(
       {
         ok: false,
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : null,
+        error: err instanceof Error ? err.message : typeof errorLike?.message === "string" ? errorLike.message : String(err),
+        stack: err instanceof Error ? err.stack : typeof errorLike?.stack === "string" ? errorLike.stack : null,
       },
       { status: 500 },
     );
