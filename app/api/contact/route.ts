@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
   });
 
   try {
-    const insertRes = await supabase.from("contact_submissions").insert({
+    const { data, error } = await supabase.from("contact_submissions").insert({
       name,
       email,
       organization: organization || null,
@@ -132,8 +132,17 @@ export async function POST(request: NextRequest) {
       status: "new",
     });
 
-    if (insertRes.error) {
-      throw insertRes.error;
+    if (error) {
+      console.error("SUPABASE ERROR", error);
+      console.error("SUPABASE DATA", data);
+      return NextResponse.json(
+        {
+          ok: false,
+          supabaseError: error,
+          data,
+        },
+        { status: 500 },
+      );
     }
   } catch (err) {
     console.error("CONTACT INSERT ERROR");
