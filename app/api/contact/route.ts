@@ -78,7 +78,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Contact submission is not fully configured. Please email hello@cybercookie.org.",
+        error: "Contact submission is not fully configured.",
+        debug: {
+          hasSupabaseUrl: !!supabaseUrl,
+          hasServiceRoleKey: !!serviceRoleKey,
+        },
       },
       { status: 503 },
     );
