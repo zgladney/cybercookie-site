@@ -136,19 +136,31 @@ export async function POST(request: NextRequest) {
       throw insertRes.error;
     }
   } catch (err) {
-    const errorLike = typeof err === "object" && err !== null ? (err as { name?: unknown; message?: unknown; stack?: unknown; cause?: unknown }) : null;
-    console.error("CONTACT ERROR", {
-      name: err instanceof Error ? err.name : typeof errorLike?.name === "string" ? errorLike.name : null,
-      message: err instanceof Error ? err.message : typeof errorLike?.message === "string" ? errorLike.message : String(err),
-      stack: err instanceof Error ? err.stack : typeof errorLike?.stack === "string" ? errorLike.stack : null,
-      cause: err instanceof Error ? err.cause : errorLike?.cause ?? null,
-    });
+    console.error("CONTACT INSERT ERROR");
+    console.error(err);
+
+    if (err instanceof Error) {
+      console.error({
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+        cause: err.cause,
+      });
+
+      if (err.cause) {
+        console.dir(err.cause, { depth: null });
+      }
+    }
 
     return NextResponse.json(
       {
         ok: false,
-        error: err instanceof Error ? err.message : typeof errorLike?.message === "string" ? errorLike.message : String(err),
-        stack: err instanceof Error ? err.stack : typeof errorLike?.stack === "string" ? errorLike.stack : null,
+        name: err instanceof Error ? err.name : null,
+        message: err instanceof Error ? err.message : String(err),
+        cause:
+          err instanceof Error && err.cause
+            ? JSON.stringify(err.cause, null, 2)
+            : null,
       },
       { status: 500 },
     );
