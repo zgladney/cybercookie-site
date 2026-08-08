@@ -96,12 +96,9 @@ export function ContactPageClient() {
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY) return;
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      if (turnstileRef.current && window.turnstile) {
+
+    function renderWidget() {
+      if (turnstileRef.current && window.turnstile && !widgetIdRef.current) {
         widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
           sitekey: TURNSTILE_SITE_KEY,
           callback: (token) => setTurnstileToken(token),
@@ -109,10 +106,25 @@ export function ContactPageClient() {
           "error-callback": () => setTurnstileToken(""),
         });
       }
-    };
+    }
+
+    // If the Turnstile script was already loaded (e.g., React StrictMode second run), render immediately.
+    if (window.turnstile) {
+      renderWidget();
+      return;
+    }
+
+    const script = document.createElement("script");
+    // ?render=explicit is required for calling window.turnstile.render() manually.
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.onload = renderWidget;
     document.head.appendChild(script);
+
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 
