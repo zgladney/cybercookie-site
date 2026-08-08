@@ -114,13 +114,8 @@ export async function POST(request: NextRequest) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ secret: turnstileSecretKey, response: turnstileToken, remoteip: ip }),
       });
-      const verifyData = (await verifyRes.json()) as { success: boolean };
-      if (!verifyData.success) {
-        return NextResponse.json(
-          { ok: false, error: "Verification failed. Please try again." },
-          { status: 400 },
-        );
-      }
+      const verification = await verifyRes.json();
+      return NextResponse.json({ verification });
     } catch (err) {
       console.error("turnstile verification error", err instanceof Error ? err.message : err);
       return NextResponse.json(
